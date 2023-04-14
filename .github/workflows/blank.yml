@@ -1,0 +1,34 @@
+name: Deploy to Environments
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-to-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      # Add any steps to deploy to the staging environment
+      
+  deploy-to-production:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'repository_dispatch'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      # Add any steps to deploy to the production environment
+
+# Manually trigger the production deployment
+# by sending a repository dispatch event
+# using the GitHub API
+# https://docs.github.com/en/rest/reference/repos#create-a-repository-dispatch-event
+      - name: Release to Production
+        uses: peter-evans/repository-dispatch@v1
+        with:
+            token: ${{ secrets.PAT }}
+            repository: ${{ github.repository }}
+            event-type: deploy-to-production
