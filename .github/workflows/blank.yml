@@ -1,34 +1,29 @@
-name: Deploy to Environments
+name: Deploy to environments
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
-  deploy-to-staging:
+  deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.example.com
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-      
-      # Add any steps to deploy to the staging environment
-      
-  deploy-to-production:
+      - name: Deploy to staging
+        env:
+          SECRET_NAME: ${{ secrets.STAGING_SECRET }}
+        run: echo "Deploying to staging environment with secret $SECRET_NAME"
+  release:
+    needs: deploy
     runs-on: ubuntu-latest
-    if: github.event_name == 'repository_dispatch'
+    environment:
+      name: production
+      url: https://example.com
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      # Add any steps to deploy to the production environment
-
-# Manually trigger the production deployment
-# by sending a repository dispatch event
-# using the GitHub API
-# https://docs.github.com/en/rest/reference/repos#create-a-repository-dispatch-event
-      - name: Release to Production
-        uses: peter-evans/repository-dispatch@v1
-        with:
-            token: ${{ secrets.PAT }}
-            repository: ${{ github.repository }}
-            event-type: deploy-to-production
+      - name: Deploy to production
+        env:
+          SECRET_NAME: ${{ secrets.PRODUCTION_SECRET }}
+        run: echo "Deploying to production environment with secret $SECRET_NAME"
