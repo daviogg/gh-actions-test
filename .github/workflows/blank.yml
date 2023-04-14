@@ -5,36 +5,30 @@ on:
     branches:
       - main
   workflow_dispatch:
-    # Only allow manual triggers for the release job
     inputs:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'staging'
-        # Validate the input is either 'staging' or 'production'
-        # by listing it as an option in the select control
         options: ['staging', 'production']
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://staging.example.com/$SECRET_NAME
     steps:
-      - name: Deploy to staging
-        env:
-          SECRET_NAME: ${{ secrets.STAGING_SECRET }}
-        run: echo "Deploying to staging environment with secret $SECRET_NAME"
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Set environment variables
+        run: |
+          if [ ${{ github.event_name }} == 'workflow_dispatch' ]; then
+            read -p 'Deploy to which environment? (staging/production): ' ENVIRONMENT
+            export ENVIRONMENT
+          else
+            export ENVIRONMENT=staging
+          fi
 
-  release:
-    needs: deploy
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.event.inputs.environment }} # Use the selected environment
-      url: https://example.com/$SECRET_NAME
-    steps:
-      - name: Deploy to production or staging
-        env:
-          SECRET_NAME: ${{ secrets.PRODUCTION_SECRET }} # Use the production secret by default
-        run: echo "Deploying to ${{ github.event.inputs.environment }} environment with secret $SECRET_NAME"
+          export SECRET_NAME=${{ secrets.${ENVIRONMENT^^}_SECRET }}
+          echo "::debug::SECRET_NAME=$SECRET_NAME"
+
+      - name: Deploy to ${{ env.ENVIRONMENT }} environment
+        run: echo "Deploying to ${{ env.ENVIRONMENT }} environment with secret $SECRET_NAME"
