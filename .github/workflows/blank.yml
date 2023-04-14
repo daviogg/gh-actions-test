@@ -6,7 +6,7 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      ENVIRONMENT:
+      environment:
         description: 'Environment to deploy to'
         required: true
         default: 'staging'
@@ -16,24 +16,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ env.ENVIRONMENT }}
-      url: https://${{ env.ENVIRONMENT }}.example.com
+      name: staging
+      url: https://staging.example.com/
     steps:
-      - name: Deploy to ${{ env.ENVIRONMENT }}
-        env:
-          SECRET_NAME: ${{ secrets[env.ENVIRONMENT + '_SECRET'] }}
-        run: |
-          echo "Deploying to ${{ env.ENVIRONMENT }} environment with secret $SECRET_NAME"
+      - name: Deploy to staging
+        run: echo "Deploying to staging environment"
 
   release:
     needs: deploy
     runs-on: ubuntu-latest
     environment:
-      name: production
-      url: https://example.com
+      name: ${{ env.ENVIRONMENT }}
+      url: https://example.com/
     steps:
-      - name: Deploy to production
+      - name: Deploy to production or staging
         env:
-          SECRET_NAME: ${{ secrets.PRODUCTION_SECRET }}
-        run: |
-          echo "Deploying to production environment with secret $SECRET_NAME"
+          SECRET_NAME: ${{ secrets[env.ENVIRONMENT + '_SECRET'] }}
+        run: echo "Deploying to ${{ env.ENVIRONMENT }} environment with secret $SECRET_NAME"
