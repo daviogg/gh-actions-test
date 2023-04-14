@@ -23,29 +23,25 @@ jobs:
       url: https://staging.example.com/${{ env.STAGING_SECRET }}
     steps:
       - name: Deploy to staging
-        env:
-          SECRET_NAME: ${{ env.STAGING_SECRET }}
-        run: echo "Deploying to staging environment with secret $SECRET_NAME"
+        run: echo "Deploying to staging environment with secret ${{ env.STAGING_SECRET }}"
 
   release:
     needs: deploy
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.environment }} # Use the selected environment
-      url: https://example.com/${{ env.PRODUCTION_SECRET }}
+      url: https://example.com/${{ env.SECRET_NAME }}
     steps:
       - name: Set environment variables
-        id: set_env
         run: |
           if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            export SECRET_NAME=${{ env.PRODUCTION_SECRET }}
             echo "Preparing to deploy to production environment with secret ${{ env.PRODUCTION_SECRET }}"
-            echo "::set-output name=secret_name::${{ env.PRODUCTION_SECRET }}"
           else
+            export SECRET_NAME=${{ env.STAGING_SECRET }}
             echo "Preparing to deploy to staging environment with secret ${{ env.STAGING_SECRET }}"
-            echo "::set-output name=secret_name::${{ env.STAGING_SECRET }}"
           fi
+          echo "::set-output name=secret_name::$SECRET_NAME"
 
       - name: Deploy to ${{ github.event.inputs.environment }} environment
-        env:
-          SECRET_NAME: ${{ steps.set_env.outputs.secret_name }}
-        run: echo "Deploying to ${{ github.event.inputs.environment }} environment with secret $SECRET_NAME"
+        run: echo "Deploying to ${{ github.event.inputs.environment }} environment with secret ${{ env.SECRET_NAME }}"
