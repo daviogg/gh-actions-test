@@ -20,11 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.example.com/$SECRET_NAME
+      url: https://staging.example.com/${{ env.STAGING_SECRET }}
     steps:
       - name: Deploy to staging
         env:
-          SECRET_NAME: ${{ secrets.STAGING_SECRET }}
+          SECRET_NAME: ${{ env.STAGING_SECRET }}
         run: echo "Deploying to staging environment with secret $SECRET_NAME"
 
   release:
@@ -32,17 +32,18 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.environment }} # Use the selected environment
-      url: https://example.com/$SECRET_NAME
+      url: https://example.com/${{ env.PRODUCTION_SECRET }}
     steps:
       - name: Set environment variables
         run: |
-          export SECRET_NAME=${{ secrets.PRODUCTION_SECRET }} # Use the production secret by default
-          echo "::set-output name=secret_name::$SECRET_NAME"
           if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            export SECRET_NAME=${{ env.PRODUCTION_SECRET }}
             echo "Preparing to deploy to production environment with secret $SECRET_NAME"
           else
+            export SECRET_NAME=${{ env.STAGING_SECRET }}
             echo "Preparing to deploy to staging environment with secret $SECRET_NAME"
           fi
+          echo "::set-output name=secret_name::$SECRET_NAME"
 
       - name: Deploy to ${{ github.event.inputs.environment }} environment
         env:
