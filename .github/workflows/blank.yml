@@ -5,11 +5,14 @@ on:
     branches:
       - main
   workflow_dispatch:
+    # Only allow manual triggers for the release job
     inputs:
       environment:
         description: 'Environment to deploy to'
         required: true
         default: 'staging'
+        # Validate the input is either 'staging' or 'production'
+        # by listing it as an option in the select control
         options: ['staging', 'production']
 
 jobs:
@@ -17,19 +20,31 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.example.com/
+      url: https://staging.example.com/$SECRET_NAME
     steps:
       - name: Deploy to staging
-        run: echo "Deploying to staging environment"
+        env:
+          SECRET_NAME: ${{ secrets.STAGING_SECRET }}
+        run: echo "Deploying to staging environment with secret $SECRET_NAME"
 
   release:
     needs: deploy
     runs-on: ubuntu-latest
     environment:
-      name: ${{ env.ENVIRONMENT }}
-      url: https://example.com/
+      name: ${{ github.event.inputs.environment }} # Use the selected environment
+      url: https://example.com/$SECRET_NAME
     steps:
-      - name: Deploy to production or staging
+      - name: Set environment variables
+        run: |
+          export SECRET_NAME=${{ secrets.PRODUCTION_SECRET }} # Use the production secret by default
+          echo "::set-output name=secret_name::$SECRET_NAME"
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            echo "Preparing to deploy to production environment with secret $SECRET_NAME"
+          else
+            echo "Preparing to deploy to staging environment with secret $SECRET_NAME"
+          fi
+
+      - name: Deploy to ${{ github.event.inputs.environment }} environment
         env:
-          SECRET_NAME: ${{ secrets[env.ENVIRONMENT + '_SECRET'] }}
-        run: echo "Deploying to ${{ env.ENVIRONMENT }} environment with secret $SECRET_NAME"
+          SECRET_NAME: ${{ steps.set_env.outputs.secret_name }}
+        run: echo "Deploying to ${{ github.event.inputs.environment }} environment with secret $SECRET_NAME"
