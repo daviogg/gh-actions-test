@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "ga-staging-c5f95",
+    "prod": "ga-prod-c4f1e"
+  }
+}

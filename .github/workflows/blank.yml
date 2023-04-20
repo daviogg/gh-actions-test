@@ -1,47 +1,38 @@
-name: Deploy to environments
-
+name: Deploy Firebase Function
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
-    # Only allow manual triggers for the release job
-    inputs:
-      environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        # Validate the input is either 'staging' or 'production'
-        # by listing it as an option in the select control
-        options: ['staging', 'production']
-
+      - master
 jobs:
-  deploy:
+  deploy_staging:
     runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://staging.example.com/${{ env.STAGING_SECRET }}
+    environment: staging
     steps:
-      - name: Deploy to staging
-        run: echo "Deploying to staging environment with secret ${{ env.STAGING_SECRET }}"
-
-  release:
-    needs: deploy
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ github.event.inputs.environment }} # Use the selected environment
-      url: https://example.com/${{ env.SECRET_NAME }}
-    steps:
-      - name: Set environment variables
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+      - name: Install dependencies
+        run: npm install
+      - name: Deploy Firebase function to staging
         run: |
-          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
-            export SECRET_NAME=${{ env.PRODUCTION_SECRET }}
-            echo "Preparing to deploy to production environment with secret ${{ env.PRODUCTION_SECRET }}"
-          else
-            export SECRET_NAME=${{ env.STAGING_SECRET }}
-            echo "Preparing to deploy to staging environment with secret ${{ env.STAGING_SECRET }}"
-          fi
-          echo "::set-output name=secret_name::$SECRET_NAME"
-
-      - name: Deploy to ${{ github.event.inputs.environment }} environment
-        run: echo "Deploying to ${{ github.event.inputs.environment }} environment with secret ${{ env.SECRET_NAME }}"
+          npx firebase use ${{ secrets.PROJECT_ID }} --token ${{ secrets.FIREBASE_TOKEN }}
+          npx firebase deploy --only functions --token ${{ secrets.FIREBASE_TOKEN }}
+  deploy_production:
+    needs: deploy_staging
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+      - name: Install dependencies
+        run: npm install
+      - name: Deploy Firebase function to production
+        run: |
+          npx firebase use ${{ secrets.PROJECT_ID }} --token ${{ secrets.FIREBASE_TOKEN }}
+          npx firebase deploy --only functions --token ${{ secrets.FIREBASE_TOKEN }}
