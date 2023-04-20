@@ -53,6 +53,13 @@ jobs:
           node-version: 14.x
       - name: Install dependencies
         run: npm install
+        working-directory: functions
+      - name: Create env
+        id: create-env
+        run: |
+          touch .env
+          echo ENV_NAME=${{ secrets.ENV_NAME }} >> .env
+          echo cat .env
       - name: Deploy Firebase function to production
         run: |
           npx firebase use ${{ secrets.PROJECT_ID }} --token ${{ secrets.FIREBASE_TOKEN }}
