@@ -3,6 +3,16 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    # Only allow manual triggers for the release job
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        # Validate the input is either 'staging' or 'production'
+        # by listing it as an option in the select control
+        options: ['staging', 'production']
 jobs:
   deploy_staging:
     runs-on: ubuntu-latest
@@ -18,6 +28,13 @@ jobs:
         working-directory: functions
       - name: Install dependencies
         run: npm install
+        working-directory: functions
+      - name: Create env
+        id: create-env
+        run: |
+          touch .env
+          echo ENV_NAME=${{ secrets.ENV_NAME }} >> .env
+          echo cat .env
         working-directory: functions
       - name: Deploy Firebase function to staging
         run: |
