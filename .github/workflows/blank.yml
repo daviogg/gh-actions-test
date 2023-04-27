@@ -30,11 +30,13 @@ jobs:
         run: npm install
         working-directory: functions
       - name: Create env
+        env:
+          REPO_NAME: ${{ secrets.REPO_NAME }}
         id: create-env
         run: |
           touch .env
           echo ENV_NAME=${{ secrets.ENV_NAME }} >> .env
-          echo REPO_NAME=${{ secrets.REPO_NAME }} >> .env
+          echo REPO_NAME=$REPO_NAME >> .env
           echo cat .env
         working-directory: functions
       - name: Deploy Firebase function to staging
@@ -58,12 +60,15 @@ jobs:
       - name: Install dependencies
         run: npm install
         working-directory: functions
+        
       - name: Create env
+        env:
+          REPO_NAME: ${{ secrets.REPO_NAME }}
         id: create-env
         run: |
           touch .env
           echo ENV_NAME=${{ secrets.ENV_NAME }} >> .env
-          echo REPO_NAME=${{ secrets.REPO_NAME }} >> .env
+          echo REPO_NAME=$REPO_NAME >> .env
           echo cat .env
         working-directory: functions
       - name: Deploy Firebase function to production
