@@ -37,6 +37,7 @@ jobs:
           touch .env
           echo ENV_NAME=${{ secrets.ENV_NAME }} >> .env
           echo REPO_NAME=$REPO_NAME >> .env
+          echo NODE_ENV=staging >> .env
           echo cat .env
         working-directory: functions
       - name: Deploy Firebase function to staging
